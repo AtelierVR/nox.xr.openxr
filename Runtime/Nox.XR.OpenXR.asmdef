@@ -5,7 +5,7 @@
     "Nox.CCK",
     "UniTask",
     "Nox.XR",
-    "Nox.XR.Runtime",
+    "Nox.CCK.XR",
     "Unity.XR.Management",
     "Unity.XR.OpenXR",
     "Unity.InputSystem"

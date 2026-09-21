@@ -2,8 +2,8 @@ using Cysharp.Threading.Tasks;
 using Nox.CCK.Mods.Cores;
 using Nox.CCK.Mods.Initializers;
 using Nox.CCK.Utils;
+using Nox.CCK.XR;
 using Nox.XR.Loaders;
-using Nox.XR.Runtime.Loaders;
 using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
 
@@ -15,6 +15,11 @@ namespace Nox.XR.OpenXR {
 	/// Volontairement plus prioritaire que <c>nox.xr.openvr</c> : sur Windows c'est OpenXR qui
 	/// est utilisé, avec OpenVR en repli. Sur Linux, Unity ne fournit pas de loader OpenXR :
 	/// <see cref="IsValid"/> renvoie faux et nox.xr bascule sur OpenVR.
+	/// </para>
+	///
+	/// <para>
+	/// nox.xr ne démarre jamais « le premier loader qui répond » : <see cref="Initialize"/> impose
+	/// <see cref="OpenXRLoader"/>, donc ce provider ne peut pas se retrouver à piloter OpenVR.
 	/// </para>
 	///
 	/// <para>
@@ -48,16 +53,11 @@ namespace Nox.XR.OpenXR {
 		public XRLoader Loader
 			=> XRLoaderAssets.Find<OpenXRLoader>();
 
-		public bool IsValid {
-			get {
-				if (!IsPlatformSupported(PlatformExtensions.CurrentPlatform))
-					return false;
-
-				// Le loader doit être celui configuré dans XR Plug-in Management, sinon
-				// XRManagementLoader.StartAsync démarrerait autre chose que ce qu'on annonce.
-				return XRManagementLoader.HasLoader<OpenXRLoader>();
-			}
-		}
+		public bool IsValid
+			=> IsPlatformSupported(PlatformExtensions.CurrentPlatform)
+				// Sans loader OpenXR configuré, XR Plug-in Management n'a rien à démarrer :
+				// ce provider s'efface (`StartAsync<OpenXRLoader>()` échouerait de toute façon).
+				&& XRManagementLoader.HasLoader<OpenXRLoader>();
 
 		/// <summary>
 		/// Plateformes pour lesquelles Unity fournit un loader OpenXR.
@@ -71,10 +71,10 @@ namespace Nox.XR.OpenXR {
 				_ => false,
 			};
 
-		public UniTask<bool> InitializeAsync()
-			=> XRManagementLoader.StartAsync();
+		public UniTask<bool> Initialize()
+			=> XRManagementLoader.StartAsync<OpenXRLoader>();
 
-		public void Deinitialize()
+		public UniTask Deinitialize()
 			=> XRManagementLoader.Stop();
 	}
 }
