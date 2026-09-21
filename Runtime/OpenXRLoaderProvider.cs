@@ -3,6 +3,7 @@ using Nox.CCK.Mods.Cores;
 using Nox.CCK.Mods.Initializers;
 using Nox.CCK.Utils;
 using Nox.CCK.XR;
+using Nox.XR.Bindings;
 using Nox.XR.Loaders;
 using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
@@ -29,20 +30,42 @@ namespace Nox.XR.OpenXR {
 	/// </para>
 	/// </summary>
 	public sealed class OpenXRLoaderProvider : IXRLoaderEditorProvider, IMainModInitializer {
-		/// <summary>
-		/// nox.xr s'initialise avant ses mods de loader : c'est ici qu'on lui signale le nôtre.
-		/// </summary>
-		public void OnInitializeMain(IMainModCoreAPI api)
-			=> XRLoaderEditorRegistry.Register(this);
+		/// <summary>Bindings OpenXR, exposés à nox.xr tant que le loader est initialisé.</summary>
+		private IBinding _binding;
 
-		public void OnDisposeMain()
-			=> XRLoaderEditorRegistry.Unregister(this);
+		/// <summary>
+		/// nox.xr s'initialise avant ses mods de loader : c'est ici qu'on lui signale le nôtre, et
+		/// qu'on construit les bindings que <see cref="Binding"/> exposera.
+		/// </summary>
+		public void OnInitializeMain(IMainModCoreAPI api) {
+			XRLoaderEditorRegistry.Register(this);
+			_binding = new OpenXRBindings(api);
+		}
+
+		public void OnDisposeMain() {
+			XRLoaderEditorRegistry.Unregister(this);
+			_binding?.Clear();
+			_binding = null;
+		}
+
+		/// <summary>
+		/// Bindings du runtime OpenXR : c'est ce runtime qui les enregistre et répond aux lectures
+		/// (<see cref="OpenXRBindings"/>), nox.xr ne fait que déclencher leur (re)liaison.
+		/// </summary>
+		public IBinding Binding
+			=> _binding;
 
 		/// <summary>Priorité du loader OpenXR (cf. <c>XRManagementLoaderProvider.DefaultPriority</c> = 0).</summary>
 		public const int DefaultPriority = 20;
 
+		/// <summary>
+		/// Identifiant du loader. C'est aussi celui que nox.xr cherche côté bindings
+		/// (<see cref="OpenXRBindingProvider.Id"/>), pour associer le provider au loader actif.
+		/// </summary>
+		public const string DefaultId = "openxr";
+
 		public string Id
-			=> "openxr";
+			=> DefaultId;
 
 		public int Priority
 			=> DefaultPriority;
@@ -53,11 +76,18 @@ namespace Nox.XR.OpenXR {
 		public XRLoader Loader
 			=> XRLoaderAssets.Find<OpenXRLoader>();
 
-		public bool IsValid
+		/// <summary>
+		/// Indique si OpenXR est réellement utilisable ici : plateforme supportée <b>et</b> loader
+		/// déclaré dans XR Plug-in Management. Sert au loader comme au provider de bindings.
+		/// </summary>
+		public static bool IsAvailable
 			=> IsPlatformSupported(PlatformExtensions.CurrentPlatform)
 				// Sans loader OpenXR configuré, XR Plug-in Management n'a rien à démarrer :
 				// ce provider s'efface (`StartAsync<OpenXRLoader>()` échouerait de toute façon).
 				&& XRManagementLoader.HasLoader<OpenXRLoader>();
+
+		public bool IsValid
+			=> IsAvailable;
 
 		/// <summary>
 		/// Plateformes pour lesquelles Unity fournit un loader OpenXR.
