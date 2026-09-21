@@ -1,8 +1,10 @@
 using Cysharp.Threading.Tasks;
+using Nox.CCK.Mods.Cores;
 using Nox.CCK.Mods.Initializers;
 using Nox.CCK.Utils;
 using Nox.XR.Loaders;
 using Nox.XR.Runtime.Loaders;
+using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
 
 namespace Nox.XR.OpenXR {
@@ -21,7 +23,16 @@ namespace Nox.XR.OpenXR {
 	/// <c>IMod.GetInstances&lt;IXRLoaderProvider&gt;()</c> retrouve ensuite.
 	/// </para>
 	/// </summary>
-	public sealed class OpenXRLoaderProvider : IXRLoaderProvider, IMainModInitializer {
+	public sealed class OpenXRLoaderProvider : IXRLoaderEditorProvider, IMainModInitializer {
+		/// <summary>
+		/// nox.xr s'initialise avant ses mods de loader : c'est ici qu'on lui signale le nôtre.
+		/// </summary>
+		public void OnInitializeMain(IMainModCoreAPI api)
+			=> XRLoaderEditorRegistry.Register(this);
+
+		public void OnDisposeMain()
+			=> XRLoaderEditorRegistry.Unregister(this);
+
 		/// <summary>Priorité du loader OpenXR (cf. <c>XRManagementLoaderProvider.DefaultPriority</c> = 0).</summary>
 		public const int DefaultPriority = 20;
 
@@ -30,6 +41,12 @@ namespace Nox.XR.OpenXR {
 
 		public int Priority
 			=> DefaultPriority;
+
+		public bool IsSupported(Platform platform)
+			=> IsPlatformSupported(platform);
+
+		public XRLoader Loader
+			=> XRLoaderAssets.Find<OpenXRLoader>();
 
 		public bool IsValid {
 			get {
