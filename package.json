@@ -1,0 +1,6 @@
+{
+  "name": "nox.xr.openxr",
+  "displayName": "Nox - XR OpenXR Loader",
+  "version": "1.0.0",
+  "description": "OpenXR loader for Nox XR (Windows, Android, Vision OS)."
+}

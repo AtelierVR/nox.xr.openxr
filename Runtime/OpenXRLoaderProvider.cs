@@ -1,0 +1,63 @@
+using Cysharp.Threading.Tasks;
+using Nox.CCK.Mods.Initializers;
+using Nox.CCK.Utils;
+using Nox.XR.Loaders;
+using Nox.XR.Runtime.Loaders;
+using UnityEngine.XR.OpenXR;
+
+namespace Nox.XR.OpenXR {
+	/// <summary>
+	/// Loader OpenXR pour nox.xr.
+	///
+	/// <para>
+	/// Volontairement plus prioritaire que <c>nox.xr.openvr</c> : sur Windows c'est OpenXR qui
+	/// est utilisé, avec OpenVR en repli. Sur Linux, Unity ne fournit pas de loader OpenXR :
+	/// <see cref="IsValid"/> renvoie faux et nox.xr bascule sur OpenVR.
+	/// </para>
+	///
+	/// <para>
+	/// Implémente <see cref="IMainModInitializer"/> parce que le loader de mods n'instancie que
+	/// les entrypoints qui implémentent <c>IModInitializer</c> : c'est cette instance que
+	/// <c>IMod.GetInstances&lt;IXRLoaderProvider&gt;()</c> retrouve ensuite.
+	/// </para>
+	/// </summary>
+	public sealed class OpenXRLoaderProvider : IXRLoaderProvider, IMainModInitializer {
+		/// <summary>Priorité du loader OpenXR (cf. <c>XRManagementLoaderProvider.DefaultPriority</c> = 0).</summary>
+		public const int DefaultPriority = 20;
+
+		public string Id
+			=> "openxr";
+
+		public int Priority
+			=> DefaultPriority;
+
+		public bool IsValid {
+			get {
+				if (!IsPlatformSupported(PlatformExtensions.CurrentPlatform))
+					return false;
+
+				// Le loader doit être celui configuré dans XR Plug-in Management, sinon
+				// XRManagementLoader.StartAsync démarrerait autre chose que ce qu'on annonce.
+				return XRManagementLoader.HasLoader<OpenXRLoader>();
+			}
+		}
+
+		/// <summary>
+		/// Plateformes pour lesquelles Unity fournit un loader OpenXR.
+		/// Linux et macOS en sont exclus (pas de plugin OpenXR côté Unity).
+		/// </summary>
+		public static bool IsPlatformSupported(Platform platform)
+			=> platform switch {
+				Platform.Windows => true,
+				Platform.Android => true,
+				Platform.VisionOS => true,
+				_ => false,
+			};
+
+		public UniTask<bool> InitializeAsync()
+			=> XRManagementLoader.StartAsync();
+
+		public void Deinitialize()
+			=> XRManagementLoader.Stop();
+	}
+}

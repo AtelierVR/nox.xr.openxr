@@ -1,0 +1,21 @@
+{
+  "name": "Nox.XR.OpenXR",
+  "rootNamespace": "",
+  "references": [
+    "Nox.CCK",
+    "UniTask",
+    "Nox.XR",
+    "Nox.XR.Runtime",
+    "Unity.XR.Management",
+    "Unity.XR.OpenXR",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "noEngineReferences": false
+}

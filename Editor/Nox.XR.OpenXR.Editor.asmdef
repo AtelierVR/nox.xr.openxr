@@ -1,0 +1,24 @@
+{
+  "name": "Nox.XR.OpenXR.Editor",
+  "rootNamespace": "",
+  "references": [
+    "Nox.CCK",
+    "Nox.XR",
+    "Nox.XR.OpenXR",
+    "Unity.XR.Management",
+    "Unity.XR.Management.Editor",
+    "Unity.XR.OpenXR",
+    "Unity.XR.OpenXR.Editor",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "noEngineReferences": false
+}

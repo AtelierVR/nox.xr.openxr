@@ -1,0 +1,53 @@
+{
+  "type": "mod",
+  "id": "nox.xr.openxr",
+  "provides": [
+    "fr.hactazia.xr.openxr",
+    "xr.openxr"
+  ],
+  "name": "XR OpenXR Loader",
+  "version": "1.0.0",
+  "description": "OpenXR loader for Nox XR (Windows, Android, Vision OS).",
+  "license": "GPL-3.0",
+  "icon": null,
+  "contact": {
+    "email": "hactazia@gmail.com",
+    "source": "https://github.com/AtelierVR/nox.xr.openxr",
+    "website": "https://nox.hactazia.fr/",
+    "issues": "https://github.com/AtelierVR/nox.xr.openxr/issues"
+  },
+  "authors": [
+    {
+      "name": "Hactazia",
+      "email": "hactazia@gmail.com",
+      "website": "https://hactazia.fr/"
+    }
+  ],
+  "relations": [
+    {
+      "id": "xr",
+      "type": "depends",
+      "version": ">=1.0.0",
+      "register": "git+https://github.com/AtelierVR/nox.xr.git"
+    },
+    {
+      "id": "com.unity.xr.openxr",
+      "type": "depends",
+      "register": "upm+com.unity.xr.openxr@1.18.0"
+    }
+  ],
+  "constraints": [
+    {
+      "type": "after",
+      "id": "xr"
+    }
+  ],
+  "entrypoints": {
+    "main": [
+      "Nox.XR.OpenXR.OpenXRLoaderProvider"
+    ],
+    "editor": [
+      "Nox.XR.OpenXR.Editor.SetupSettings"
+    ]
+  }
+}
