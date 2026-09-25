@@ -44,8 +44,6 @@ namespace Nox.XR.OpenXR {
 
 		public void OnDisposeMain() {
 			XRLoaderEditorRegistry.Unregister(this);
-			_binding?.Clear();
-			_binding = null;
 		}
 
 		/// <summary>
@@ -94,12 +92,9 @@ namespace Nox.XR.OpenXR {
 		/// Linux et macOS en sont exclus (pas de plugin OpenXR côté Unity).
 		/// </summary>
 		public static bool IsPlatformSupported(Platform platform)
-			=> platform switch {
-				Platform.Windows => true,
-				Platform.Android => true,
-				Platform.VisionOS => true,
-				_ => false,
-			};
+			=> platform == Platform.Windows 
+				|| platform == Platform.Android 
+				|| platform == Platform.VisionOS;
 
 		public UniTask<bool> Initialize()
 			=> XRManagementLoader.StartAsync<OpenXRLoader>();
