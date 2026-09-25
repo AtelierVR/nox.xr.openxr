@@ -4,7 +4,6 @@ using Nox.CCK.Mods.Cores;
 using Nox.KeyBindings;
 using Nox.XR.Bindings;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Logger = Nox.CCK.Utils.Logger;
 
 namespace Nox.XR.OpenXR {
@@ -15,10 +14,10 @@ namespace Nox.XR.OpenXR {
 	/// Enregistre auprès du système de key bindings les chemins délivrés par
 	/// <see cref="OpenXRBindingProvider"/> et répond aux lectures en interrogeant directement les
 	/// actions : c'est le mod qui possède ses bindings, nox.xr ne fait que déclencher
-	/// <see cref="Refresh"/> et relayer les valeurs.
+	/// <see cref="Initialize"/> et relayer les valeurs.
 	/// </para>
 	/// </summary>
-	public sealed class OpenXRBindings : IBinding {
+	public sealed class OpenXRBindings : IBinding, IDisposable {
 		private readonly IMainModCoreAPI _api;
 
 		/// <summary>Poignées des actions enregistrées, par clé de binding.</summary>
@@ -33,8 +32,8 @@ namespace Nox.XR.OpenXR {
 		private IKeyBindingManager Manager
 			=> _api?.ModAPI?.GetMod("keybinding")?.GetInstance<IKeyBindingManager>();
 
-		public void Refresh() {
-			Clear();
+		public void Initialize() {
+			Deinitialize();
 
 			var manager = Manager;
 			if (manager == null) {
@@ -59,7 +58,7 @@ namespace Nox.XR.OpenXR {
 			Logger.LogDebug($"OpenXR: {_handles.Count} key binding(s) registered.");
 		}
 
-		public void Clear() {
+		public void Deinitialize() {
 			var manager = Manager;
 			if (manager != null)
 				foreach (var handle in _handles.Values)
@@ -81,5 +80,8 @@ namespace Nox.XR.OpenXR {
 			var action = _handles.TryGetValue(key, out var handle) ? handle.GetAction() : null;
 			return action is { enabled: true } ? action.ReadValue<T>() : default;
 		}
-	}
+
+        public void Dispose()
+			=> Deinitialize();
+    }
 }

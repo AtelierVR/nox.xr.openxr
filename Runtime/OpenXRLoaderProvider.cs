@@ -31,7 +31,7 @@ namespace Nox.XR.OpenXR {
 	/// </summary>
 	public sealed class OpenXRLoaderProvider : IXRLoaderEditorProvider, IMainModInitializer {
 		/// <summary>Bindings OpenXR, exposés à nox.xr tant que le loader est initialisé.</summary>
-		private IBinding _binding;
+		private OpenXRBindings _binding;
 
 		/// <summary>
 		/// nox.xr s'initialise avant ses mods de loader : c'est ici qu'on lui signale le nôtre, et
@@ -43,12 +43,15 @@ namespace Nox.XR.OpenXR {
 		}
 
 		public void OnDisposeMain() {
+			_binding?.Dispose();
 			XRLoaderEditorRegistry.Unregister(this);
 		}
 
 		/// <summary>
-		/// Bindings du runtime OpenXR : c'est ce runtime qui les enregistre et répond aux lectures
-		/// (<see cref="OpenXRBindings"/>), nox.xr ne fait que déclencher leur (re)liaison.
+		/// Bindings du runtime OpenXR : c'est le loader qui les enregistre auprès de nox.keybinding
+		/// à l'initialisation (<see cref="Initialize"/>) et les retire à l'arrêt
+		/// (<see cref="Deinitialize"/>), et qui répond aux lectures. nox.xr ne fait que relayer les
+		/// valeurs.
 		/// </summary>
 		public IBinding Binding
 			=> _binding;
@@ -96,10 +99,30 @@ namespace Nox.XR.OpenXR {
 				|| platform == Platform.Android 
 				|| platform == Platform.VisionOS;
 
-		public UniTask<bool> Initialize()
-			=> XRManagementLoader.StartAsync<OpenXRLoader>();
+		/// <summary>
+		/// Démarre OpenXR, puis enregistre nos bindings auprès de nox.keybinding.
+		///
+		/// <para>
+		/// L'enregistrement se fait ici et non à la construction du provider : les chemins sont
+		/// résolus contre les manettes réellement connectées (<c>XRBindingPaths.Resolve</c>), et
+		/// elles n'existent qu'une fois le runtime démarré. Si OpenXR ne démarre pas, rien n'est
+		/// enregistré — un binding qu'on ne peut pas lire n'a rien à faire dans la liste.
+		/// </para>
+		/// </summary>
+		public async UniTask<bool> Initialize() {
+			if (!await XRManagementLoader.StartAsync<OpenXRLoader>())
+				return false;
+			_binding.Initialize();
+			return true;
+		}
 
-		public UniTask Deinitialize()
-			=> XRManagementLoader.Stop();
+		/// <summary>
+		/// Arrête OpenXR, puis retire nos bindings : ils pointent sur des actions liées aux devices
+		/// que XR Plug-in Management vient de détruire.
+		/// </summary>
+		public async UniTask Deinitialize() {
+			await XRManagementLoader.Stop();
+			_binding.Deinitialize();
+		}
 	}
 }
