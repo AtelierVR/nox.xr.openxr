@@ -96,6 +96,7 @@ namespace Nox.XR.OpenXR {
 		/// </summary>
 		public static bool IsPlatformSupported(Platform platform)
 			=> platform == Platform.Windows 
+				|| platform == Platform.Linux 
 				|| platform == Platform.Android 
 				|| platform == Platform.VisionOS;
 
