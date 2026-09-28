@@ -33,18 +33,42 @@ namespace Nox.XR.OpenXR {
 		/// <summary>Bindings OpenXR, exposés à nox.xr tant que le loader est initialisé.</summary>
 		private OpenXRBindings _binding;
 
+		/// <summary>API principale, livrée par <see cref="OnInitializeMain"/> (qui peut arriver après <see cref="Initialize"/>).</summary>
+		private IMainModCoreAPI _api;
+
+		/// <summary><c>true</c> une fois le loader OpenXR démarré par <see cref="Initialize"/>.</summary>
+		private bool _started;
+
 		/// <summary>
-		/// nox.xr s'initialise avant ses mods de loader : c'est ici qu'on lui signale le nôtre, et
-		/// qu'on construit les bindings que <see cref="Binding"/> exposera.
+		/// nox.xr s'initialise <b>avant</b> ses mods de loader : son initialiseur client peut donc
+		/// démarrer la XR via <see cref="Initialize"/> avant que cet initialiseur principal ne
+		/// construise les bindings. On retient l'API et, si la XR tourne déjà, on enregistre les
+		/// bindings tout de suite (<see cref="Initialize"/> ne pouvait pas le faire).
 		/// </summary>
 		public void OnInitializeMain(IMainModCoreAPI api) {
+			_api = api;
 			XRLoaderEditorRegistry.Register(this);
-			_binding = new OpenXRBindings(api);
+
+			EnsureBindings();
+			if (_started)
+				_binding.Initialize();
 		}
 
 		public void OnDisposeMain() {
 			_binding?.Dispose();
+			_binding = null;
+			_api     = null;
 			XRLoaderEditorRegistry.Unregister(this);
+		}
+
+		/// <summary>
+		/// Crée les bindings dès que l'API est connue. Tant qu'elle ne l'est pas (initialiseur
+		/// principal pas encore appelé), <see cref="Binding"/> reste <c>null</c> : nox.xr lit alors
+		/// des entrées non liées, jusqu'à l'enregistrement par <see cref="OnInitializeMain"/>.
+		/// </summary>
+		private void EnsureBindings() {
+			if (_binding == null && _api != null)
+				_binding = new OpenXRBindings(_api);
 		}
 
 		/// <summary>
@@ -113,7 +137,18 @@ namespace Nox.XR.OpenXR {
 		public async UniTask<bool> Initialize() {
 			if (!await XRManagementLoader.StartAsync<OpenXRLoader>())
 				return false;
-			_binding.Initialize();
+
+			_started = true;
+
+			EnsureBindings();
+			if (_binding != null)
+				_binding.Initialize();
+			else
+				Logger.LogWarning(
+					"OpenXR: key bindings are created by the main initializer which has not run yet; "
+					+ "they will be registered as soon as it does."
+				);
+
 			return true;
 		}
 
@@ -122,8 +157,9 @@ namespace Nox.XR.OpenXR {
 		/// que XR Plug-in Management vient de détruire.
 		/// </summary>
 		public async UniTask Deinitialize() {
+			_started = false;
 			await XRManagementLoader.Stop();
-			_binding.Deinitialize();
+			_binding?.Deinitialize();
 		}
 	}
 }

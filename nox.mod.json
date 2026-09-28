@@ -34,6 +34,16 @@
       "id": "com.unity.xr.openxr",
       "type": "depends",
       "register": "upm+com.unity.xr.openxr@1.18.0"
+    },
+    {
+      "id": "com.htc.upm.vive.openxr",
+      "type": "depends",
+      "register": "git+https://github.com/ViveSoftware/VIVE-OpenXR-Unity.git?path=com.htc.upm.vive.openxr"
+    },
+    {
+      "id": "com.unity.modules.vr",
+      "type": "depends",
+      "register": "upm+com.unity.modules.vr@1.0.0"
     }
   ],
   "constraints": [
